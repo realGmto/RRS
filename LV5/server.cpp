@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <cstring>
 #include <map>
 #include <vector>
 #include <algorithm>
@@ -39,8 +40,8 @@ void handleClient(int clientSocket, int clientID) {
             std::lock_guard<std::mutex> lock(mtx);
             topicSubscribers[topic].push_back(clientID);
             std::cout << "Client " << clientID << " subscribed to " << topic << std::endl;
-            std::string message = "Successfuly subscribed to: " + topic;
-            send(clientID, message.c_str(), message.length(), 0);
+            std::string message = "Successfuly subscribed to: " + topic + "\n";
+            send(clientSocket, message.c_str(), message.length(), 0);
         } 
         else if (cmd == "PUBLISH") {
             std::string topic, message;
@@ -53,7 +54,7 @@ void handleClient(int clientSocket, int clientID) {
                     std::cout << "Sending message to client " << subscriberID << ": " << message << std::endl;
 
                     std::string sending_message = "Successfully published message(" + topic + "): " + message;
-                    send(clientID, sending_message.c_str(), sending_message.length(), 0);
+                    send(clientSocket, sending_message.c_str(), sending_message.length(), 0);
                 }
             } else {
                 std::cout << "No subscribers for topic " << topic << std::endl;
@@ -68,7 +69,15 @@ void handleClient(int clientSocket, int clientID) {
             std::cout << "Client " << clientID << " unsubscribed from " << topic << std::endl;
 
             std::string message = "Successfully unsubscribed from: " + topic;
-            send(clientID, message.c_str(), message.length(), 0);
+            send(clientSocket, message.c_str(), message.length(), 0);
+        }
+        else if ( cmd == "TOPICS") {
+            std::string message = "Active topics: \n";
+            for (auto topic : topicSubscribers){
+                message += "\t" + topic.first + "\n";
+            }
+            std::cout << "Client " << clientID << " listed all topics " << std::endl;
+            send(clientSocket, message.c_str(), message.length(), 0);
         }
     }
 
@@ -83,7 +92,7 @@ int main() {
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket < 0) {
         std::cerr << "Error opening socket." << std::endl;
-        return;
+        return 1;
     }
 
     serverAddr.sin_family = AF_INET;
@@ -92,11 +101,11 @@ int main() {
 
     if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
         std::cerr << "Error binding socket." << std::endl;
-        return;
+        return 1;
     }
 
     listen(serverSocket, 5);
-    std::cout << "Server listening on port " << port << "..." << std::endl;
+    std::cout << "Server listening on port " << PORT << "..." << std::endl;
 
     int clientID = 0;
     while (true) {

@@ -10,6 +10,7 @@ int main() {
     for (int i = 0; i < SIZE; i++) {
         x[i] = i + 1;
     }
+    omp_set_num_threads(4);
 
     printf("Initial value of y: %d\n", y);
     

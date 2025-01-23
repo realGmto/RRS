@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sstream>
+#include <thread>
 
 #define PORT 8080
 #define BUFFER_SIZE 1024
@@ -14,6 +15,9 @@ void receiveMessages(int serverSocket) {
         if (n > 0) {
             buffer[n] = '\0';
             std::cout << "Received: " << buffer << std::endl;
+        }
+        else{
+            std::cout << "Error in receiving message" << std::endl;
         }
     }
 }
@@ -37,7 +41,8 @@ int main() {
         return -1;
     }
 
-    std::thread(receiveMessages, serverSocket).detach();  // Listen for incoming messages asynchronously
+    std::thread receiver(receiveMessages, serverSocket);  // Listen for incoming messages asynchronously
+    receiver.detach();
 
     std::string command;
     while (true) {
